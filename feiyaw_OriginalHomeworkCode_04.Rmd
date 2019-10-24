@@ -1,0 +1,369 @@
+---
+title: "Feiyaw__OriginalHomeworkCode_04"
+author: "Feiya Wang"
+date: "10/23/2019"
+output: html_document
+---
+***
+
+## Homework 4
+
+***
+Introduction: This is the code for [Homework 04](https://fuzzyatelin.github.io/bioanth-stats/homework-04.html), on week 7 of AN597
+
+# Question 1
+>Write a simple R function, Z.prop.test(), that can perform one- or two-sample Z-tests for proportion data, using the following guidelines.
+
+1.Your function should take the following arguments: p1 and n1 (no default) representing the estimated proportion and sample size (i.e., based on your sample data); p2 and n2 (both defaulting to NULL) that contain a second sample’s proportion and sample size data in the event of a two-sample test; p0 (no default) as the expected value for the population proportion; and alternative (default “two.sided”) and conf.level (default 0.95), to be used in the same way as in the function t.test().
+
+2.When conducting a two-sample test, it should be p1 that is tested as being smaller or larger than p2 when alternative=“less” or alternative=“greater”, the same as in the use of x and y in the function t.test().
+
+3.The function should perform a one-sample Z-test using p1, n1, and p0 if either p2 or n2 (or both) is NULL.
+
+4.The function should contain a check for the rules of thumb we have talked about (n∗p>5 and n∗(1−p)>5) to ensure the validity of assuming the normal distribution in both the one- and two-sample settings. If this is violated, the function should still complete but it should also print an appropriate warning message.
+
+5.The function should return a list containing the members Z (the test statistic), P (the appropriate p value), and CI (the two-sided CI with respect to “conf.level” around p1 in the case of a one-sample test and around p2-p1 in the case of a two-sample test). For all test alternatives (“two.sided”, “greater”, “less”), calculate symmetric CIs based on quantiles of the normal distribution rather than worrying about calculating single-limit confidence bounds.
+
+
+
+```{r}
+z.prop.test <-function(p1,n1,p2=NULL,n2=NULL,p0,alternative=c("two.sided", "less", "greater"),conf.level=0.95){
+  #seeting function for allthe required default and no default values
+  m=mean(p1)
+  #mean of population one
+  ste=sqrt(p0(1−p0)/n1)                  
+  #standard error of population one.
+  s=sd(p1)
+  #standard deviation of p1
+  a=1-conf.level
+  # alpha value
+  
+  if(is.NULL(p2) | is.NULL(n2)){  # if p2 and n2 are null, we do the one-propotion z test.
+      if(n1∗p0>5 & n1∗(1−p0)>5){    #check for rule of thumbs
+        z=(m-p0)/ste                       
+        # z-score calculation
+      
+        if(alternative=="less"){      # contain if(less), else if(greater), else if(two sided), else(error)
+         p <- pnorm(z)
+         # p value calculation
+         
+         lower <- m - qnorm(1 - a/2) * ste  
+         # (1-alpha)/2 each in the upper and lower tails of the distribution
+          
+         upper <- m + qnorm(1 - a/2) * ste 
+         # (1-alpha)/2 each in the upper and lower tails of the distribution
+          
+         ci <- c(lower, upper)
+         # confidence interval
+          
+         test=TRUE
+         #result of test as a boolean veriable.
+           
+           r=c(z,p,ci,test)
+           # variable for return
+        
+           if(p< a){        # check if p value is less than alpha value.if(yes), else (no) 
+          
+         
+             return(r)
+         }
+           else{
+          test=FALSE
+          return(r)
+          # cannot reject hypothesis because p value > alpha
+        }
+      }
+    
+        else if(alternative=="greater"){
+          p <- 1-pnorm(z)
+          # p value calculation
+        
+         lower <- m - qnorm(1 - a/2) * ste  
+         # (1-alpha)/2 each in the upper and lower tails of the distribution
+          
+         upper <- m + qnorm(1 - a/2) * ste 
+         # (1-alpha)/2 each in the upper and lower tails of the distribution
+          
+         ci <- c(lower, upper)
+         # confidence interval
+          
+         test=TRUE
+         #result of test as a boolean veriable.
+           
+           r=c(z,p,ci,test)
+           # variable for return
+        
+           if(p< a){        # check if p value is less than alpha value.if(yes), else (no) 
+          
+         
+             return(r)
+         }
+           else{
+          test=FALSE
+          return(r)
+          # cannot reject hypothesis because p value > alpha
+        }
+      }
+      
+        else if(alternative=="two.sided"){ 
+          p <- 2*pnorm(z)
+          #p value calculation
+        
+         lower <- m - qnorm(1 - a/2) * ste  
+         # (1-alpha)/2 each in the upper and lower tails of the distribution
+          
+         upper <- m + qnorm(1 - a/2) * ste 
+         # (1-alpha)/2 each in the upper and lower tails of the distribution
+          
+         ci <- c(lower, upper)
+         # confidence interval
+          
+         test=TRUE
+         #result of test as a boolean veriable.
+           
+           r=c(z,p,ci,test)
+           # variable for return
+        
+           if(p< a){        # check if p value is less than alpha value.if(yes), else (no) 
+          
+         
+             return(r)
+         }
+           else{
+          test=FALSE
+          return(r)
+          # cannot reject hypothesis because p value > alpha
+        }
+    }
+    
+        else { #error
+       warning("it is a one-proptional z test")
+      # error message
+    }
+      
+      }
+      else{     # cannot pass rule of thumbs
+      warning("cannot assume this normal approximation since it didn't pass rule of thumb check")
+      }
+    }
+    
+  else if(!(is.null(p2)&is.null(n2))){  "if we have p2,n2 value, we should do two proption z test"
+      m1=mean(p1)
+      #mean of population one
+      m2=mean(p2)
+      #mean of population two
+      p0=(sum(p1)+sum(p2))/(n1+n2)
+      # define the pooled propotion
+      ste=sqrt(p0*(1−p0)*(1/n1+1/n2))
+      # standard error of p1+p2
+      if(n1∗p0>5 & n1∗(1−p0)>5 & n2∗p0>5& n2∗(1-p0)>5){            #check for rule of thumbs
+        z=(m1-m2)/ste
+        # z-score for two propotion z test
+        m= m1-m2
+        #restate m. 
+        if(alternative=="less"){   # contain if(less), else if(greater), else if(two sided), else(error)
+          p <- pnorm(z)
+          # p value calculation
+          
+          
+         lower <- m - qnorm(1 - a/2) * ste  
+         # (1-alpha)/2 each in the upper and lower tails of the distribution
+          
+         upper <- m + qnorm(1 - a/2) * ste 
+         # (1-alpha)/2 each in the upper and lower tails of the distribution
+          
+         ci <- c(lower, upper)
+         # confidence interval
+          
+         test=TRUE
+         #result of test as a boolean veriable.
+           
+           r=c(z,p,ci,test)
+           # variable for return
+        
+           if(p< a){        # check if p value is less than alpha value.if(yes), else (no) 
+          
+         
+             return(r)
+         }
+           else{
+          test=FALSE
+          
+          return(r)
+          # cannot reject hypothesis because p value > alpha
+        }
+      }
+    
+        else if(alternative=="greater"){
+            p <- 1-pnorm(z)
+            # p value calculation
+            
+         lower <- m - qnorm(1 - a/2) * ste  
+         # (1-alpha)/2 each in the upper and lower tails of the distribution
+          
+         upper <- m + qnorm(1 - a/2) * ste 
+         # (1-alpha)/2 each in the upper and lower tails of the distribution
+          
+         ci <- c(lower, upper)
+         # confidence interval
+          
+         test=TRUE
+         #result of test as a boolean veriable.
+           
+           r=c(z,p,ci,test)
+           # variable for return
+        
+           if(p< a){        # check if p value is less than alpha value.if(yes), else (no) 
+          
+         
+             return(r)
+         }
+           else{
+         
+              test=FALSE
+          return(r)
+          # cannot reject hypothesis because p value > alpha
+        }
+      }
+      
+        else if(alternative=="two.sided"){ 
+          p <- 2*pnorm(z)
+          # p value calculation
+          
+         lower <- m - qnorm(1 - a/2) * ste  
+         # (1-alpha)/2 each in the upper and lower tails of the distribution
+          
+         upper <- m + qnorm(1 - a/2) * ste 
+         # (1-alpha)/2 each in the upper and lower tails of the distribution
+          
+         ci <- c(lower, upper)
+         # confidence interval
+          
+         test=TRUE
+         #result of test as a boolean veriable.
+           
+           r=c(z,p,ci,test)
+           # variable for return
+        
+           if(p< a){        # check if p value is less than alpha value.if(yes), else (no) 
+          
+         
+             return(r)
+         }
+           else{
+          test=FALSE
+          return(r)
+          # cannot reject hypothesis because p value > alpha
+        }
+    }
+    
+        else { #error
+       warning("it is a one-proptional z test")
+      # error message
+    }
+      
+      }
+      else{    # cannot pass the check for rule of thumbs
+        warning("cannot assume this normal approximation since it didn't pass rule of thumb check")
+      }
+    }
+  
+  else {
+        warning("cannot assume this normal approximation since it didn't pass rule of thumb check")
+    }
+  }
+
+```
+
+Here is the test of the z.prop.function we write.
+```{r}
+
+```
+
+
+
+# Question 2
+
+>The dataset from Kamilar and Cooper has in it a large number of variables related to life history and body size. For this exercise, the end aim is to fit a simple linear regression model to predict longevity (MaxLongevity_m) measured in months from species’ brain size (Brain_Size_Species_Mean) measured in grams. Do the following for both longevity~brain size and log(longevity)~log(brain size):
+
+```{r}
+library (curl)
+#install package curl before this step to load a file from server.
+f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN597_Fall19/KamilarAndCooperData.csv")
+#load the file in varibale f
+d <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+# read file in d as a dataframe.
+```
+
+
+>1.Fit the regression model and, using {ggplot2}, produce a scatterplot with the fitted line superimposed upon the data. Append the the fitted model equation to your plot (HINT: use the function geom_text()).
+
+```{r}
+p1 <- ggplot(data=d, aes(x=MaxLongevity_m,y=Brain_Size_Species_Mean))
+# build a ggplot object
+p1 <- p1 + geom_point() 
+# make a scatterplot
+p1 <- p1 + geom_smooth(method="lm", fullrange=TRUE)
+# add a regression line 
+m<-lm(data=d,MaxLongevity_m ~ Brain_Size_Species_Mean)
+# make the model of two variable
+t <- unlist(m$coefficients)
+# unlist m to get coeffient
+beta0<-round(t[1],digits = 3)
+#round beta 1 to 3 decimal place
+beta1<-round(t[2],digits = 3)
+#round beta 0 to 3 decimal place
+soe1<-paste("y=",as.character(beta1),"x+",as.character(beta0))
+
+p1<-p1+annotate("text", label = soe, x = 600, y = 500, size = 5, colour = "black")
+p1
+
+r1<-log(d$MaxLongevity_m)
+r2<-log(d$Brain_Size_Species_Mean)
+
+p2 <- ggplot(data=d, aes(x=r1,y=r2))
+# build a ggplot object
+p2 <- p2 + geom_point() 
+# make a scatterplot
+p2 <- p2 + geom_smooth(method="lm", fullrange=TRUE)
+# add a regression line 
+m<-lm(data=d,log(MaxLongevity_m) ~ log(Brain_Size_Species_Mean))
+# make the model of two variable
+t <- unlist(m$coefficients)
+# unlist m to get coeffient
+beta0<-round(t[1],digits = 3)
+#round beta 1 to 3 decimal place
+beta1<-round(t[2],digits = 3)
+#round beta 0 to 3 decimal place
+soe2<-paste("y=",as.character(beta1),"x+",as.character(beta0))
+
+p2<-p2+annotate("text", label = soe, x = 600, y = 500, size = 5, colour = "black")
+p2
+
+```
+
+>2.Identify and interpret the point estimate of the slope (β1), as well as the outcome of the test associated with the hypotheses H0: β1 = 0; HA: β1 ≠ 0. Also, find a 90 percent CI for the slope (β1) parameter.
+
+```{r}
+
+```
+
+>3.Using your model, add lines for the 90 percent confidence and prediction interval bands on the plot and add a legend to differentiate between the lines.
+
+```{r}
+
+```
+
+>4.Produce a point estimate and associated 90 percent PI for the longevity of a species whose brain weight is 800 gm. Do you trust the model to predict observations accurately for this value of the explanatory variable? Why or why not?
+Looking at your two models, which do you think is better? Why?
+
+```{r}
+
+```
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
